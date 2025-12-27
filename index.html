@@ -1,572 +1,826 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Writing Lens</title>
-    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-primary: #faf8f5;
-            --bg-secondary: #f0ebe3;
-            --bg-card: #ffffff;
-            --text-primary: #2c2418;
-            --text-secondary: #6b5d4d;
-            --text-muted: #9a8b78;
-            --accent: #c45d3a;
-            --accent-hover: #a84d2f;
-            --accent-light: #f8ebe6;
-            --border: #e5ded4;
-            --shadow: rgba(44, 36, 24, 0.08);
-            --tag-bg: #eee8df;
-            --success: #4a7c59;
-            --error: #b84a3c;
-        }
-
-        .dark {
-            --bg-primary: #1a1714;
-            --bg-secondary: #252019;
-            --bg-card: #2a241c;
-            --text-primary: #f0ebe3;
-            --text-secondary: #b8a994;
-            --text-muted: #7a6c5a;
-            --accent: #e07850;
-            --accent-hover: #f08a62;
-            --accent-light: #3d2a22;
-            --border: #3d362c;
-            --shadow: rgba(0, 0, 0, 0.3);
-            --tag-bg: #3a332a;
-            --success: #6b9a7a;
-            --error: #d46a5c;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'DM Sans', sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            min-height: 100vh;
-            line-height: 1.6;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 2rem 1.5rem;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 2.5rem;
-            animation: fadeDown 0.6s ease-out;
-        }
-
-        @keyframes fadeDown {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 0.4; }
-            50% { opacity: 1; }
-        }
-
-        h1 {
-            font-family: 'Crimson Pro', serif;
-            font-size: 2.5rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 0.5rem;
-            letter-spacing: -0.02em;
-        }
-
-        .subtitle {
-            color: var(--text-muted);
-            font-size: 1rem;
-        }
-
-        .editor-section {
-            background: var(--bg-card);
-            border-radius: 16px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            border: 1px solid var(--border);
-            box-shadow: 0 4px 24px var(--shadow);
-            animation: fadeUp 0.6s ease-out 0.1s both;
-        }
-
-        .section-label {
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--text-muted);
-            margin-bottom: 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .section-label::before {
-            content: '';
-            width: 12px;
-            height: 2px;
-            background: var(--accent);
-            border-radius: 1px;
-        }
-
-        textarea {
-            width: 100%;
-            min-height: 200px;
-            border: 2px solid var(--border);
-            border-radius: 12px;
-            padding: 1.25rem;
-            font-family: 'Crimson Pro', serif;
-            font-size: 1.125rem;
-            line-height: 1.8;
-            color: var(--text-primary);
-            background: var(--bg-primary);
-            resize: vertical;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-
-        textarea:focus {
-            outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 4px var(--accent-light);
-        }
-
-        textarea::placeholder {
-            color: var(--text-muted);
-            font-style: italic;
-        }
-
-        .aspects-section {
-            animation: fadeUp 0.6s ease-out 0.2s both;
-        }
-
-        .aspects-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 0.75rem;
-        }
-
-        .aspect-chip {
-            position: relative;
-            cursor: pointer;
-        }
-
-        .aspect-chip input {
-            position: absolute;
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .aspect-chip label {
-            display: flex;
-            align-items: center;
-            gap: 0.625rem;
-            padding: 0.75rem 1rem;
-            background: var(--tag-bg);
-            border: 2px solid transparent;
-            border-radius: 10px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .aspect-chip label:hover {
-            background: var(--accent-light);
-            color: var(--accent);
-        }
-
-        .aspect-chip input:checked + label {
-            background: var(--accent-light);
-            border-color: var(--accent);
-            color: var(--accent);
-        }
-
-        .aspect-chip .icon {
-            font-size: 1.1rem;
-        }
-
-        .analyze-btn {
-            width: 100%;
-            padding: 1rem 2rem;
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            border-radius: 12px;
-            font-family: 'DM Sans', sans-serif;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            margin-top: 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-
-        .analyze-btn:hover:not(:disabled) {
-            background: var(--accent-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(196, 93, 58, 0.3);
-        }
-
-        .analyze-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .spinner {
-            width: 18px;
-            height: 18px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-top-color: #fff;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .feedback-section {
-            display: none;
-            animation: fadeUp 0.5s ease-out;
-        }
-
-        .feedback-section.visible {
-            display: block;
-        }
-
-        .feedback-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 1rem;
-        }
-
-        .feedback-status {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.85rem;
-            color: var(--text-muted);
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--success);
-        }
-
-        .status-dot.loading {
-            background: var(--accent);
-            animation: pulse 1s ease-in-out infinite;
-        }
-
-        .status-dot.error {
-            background: var(--error);
-        }
-
-        .feedback-content {
-            background: var(--bg-primary);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            font-family: 'Crimson Pro', serif;
-            font-size: 1.05rem;
-            line-height: 1.9;
-            color: var(--text-primary);
-            white-space: pre-wrap;
-        }
-
-        .feedback-content h1, .feedback-content h2, .feedback-content h3 {
-            font-family: 'DM Sans', sans-serif;
-            color: var(--accent);
-            margin-top: 1.25rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .feedback-content h1:first-child, .feedback-content h2:first-child, .feedback-content h3:first-child {
-            margin-top: 0;
-        }
-
-        .feedback-content ul, .feedback-content ol {
-            margin-left: 1.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .feedback-content li {
-            margin-bottom: 0.5rem;
-        }
-
-        .feedback-content strong {
-            color: var(--accent);
-        }
-
-        .feedback-content code {
-            background: var(--tag-bg);
-            padding: 0.15rem 0.4rem;
-            border-radius: 4px;
-            font-family: monospace;
-            font-size: 0.9em;
-        }
-
-        .feedback-content blockquote {
-            border-left: 3px solid var(--accent);
-            margin: 1rem 0;
-            padding-left: 1rem;
-            color: var(--text-secondary);
-            font-style: italic;
-        }
-
-        .word-count {
-            text-align: right;
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-top: 0.5rem;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 2rem;
-            color: var(--text-muted);
-            font-style: italic;
-        }
-
-        @media (max-width: 600px) {
-            .container {
-                padding: 1.25rem 1rem;
-            }
-
-            h1 {
-                font-size: 2rem;
-            }
-
-            .aspects-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-
-            .aspect-chip label {
-                padding: 0.625rem 0.875rem;
-                font-size: 0.85rem;
-            }
-
-            textarea {
-                min-height: 160px;
-                font-size: 16px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>Writing Lens</h1>
-            <p class="subtitle">Focused feedback on the aspects that matter to you</p>
-        </header>
-
-        <div class="editor-section">
-            <div class="section-label">Your Writing</div>
-            <textarea id="writingInput" placeholder="Paste or type your text here..."></textarea>
-            <div class="word-count"><span id="wordCount">0</span> words</div>
-        </div>
-
-        <div class="editor-section aspects-section">
-            <div class="section-label">Select Feedback Aspects</div>
-            <div class="aspects-grid">
-                <div class="aspect-chip">
-                    <input type="checkbox" id="grammar" value="Grammar & Spelling" checked>
-                    <label for="grammar"><span class="icon">✓</span> Grammar</label>
-                </div>
-                <div class="aspect-chip">
-                    <input type="checkbox" id="clarity" value="Clarity & Readability">
-                    <label for="clarity"><span class="icon">◎</span> Clarity</label>
-                </div>
-                <div class="aspect-chip">
-                    <input type="checkbox" id="tone" value="Tone & Voice">
-                    <label for="tone"><span class="icon">♪</span> Tone</label>
-                </div>
-                <div class="aspect-chip">
-                    <input type="checkbox" id="structure" value="Structure & Flow">
-                    <label for="structure"><span class="icon">≡</span> Structure</label>
-                </div>
-                <div class="aspect-chip">
-                    <input type="checkbox" id="conciseness" value="Conciseness">
-                    <label for="conciseness"><span class="icon">◇</span> Conciseness</label>
-                </div>
-                <div class="aspect-chip">
-                    <input type="checkbox" id="vocabulary" value="Vocabulary & Word Choice">
-                    <label for="vocabulary"><span class="icon">Aa</span> Vocabulary</label>
-                </div>
-                <div class="aspect-chip">
-                    <input type="checkbox" id="engagement" value="Engagement & Impact">
-                    <label for="engagement"><span class="icon">★</span> Engagement</label>
-                </div>
-                <div class="aspect-chip">
-                    <input type="checkbox" id="argument" value="Argument & Logic">
-                    <label for="argument"><span class="icon">⚡</span> Argument</label>
-                </div>
-            </div>
-
-            <button class="analyze-btn" id="analyzeBtn">
-                <span class="btn-text">Analyze Writing</span>
-            </button>
-        </div>
-
-        <div class="editor-section feedback-section" id="feedbackSection">
-            <div class="feedback-header">
-                <div class="section-label">Feedback</div>
-                <div class="feedback-status">
-                    <span class="status-dot" id="statusDot"></span>
-                    <span id="statusText">Analyzing...</span>
-                </div>
-            </div>
-            <div class="feedback-content" id="feedbackContent"></div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script>
-        // Dark mode detection
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            document.documentElement.classList.add('dark');
-        }
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
-            if (event.matches) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
-        });
-
-        // Elements
-        const writingInput = document.getElementById('writingInput');
-        const wordCountEl = document.getElementById('wordCount');
-        const analyzeBtn = document.getElementById('analyzeBtn');
-        const feedbackSection = document.getElementById('feedbackSection');
-        const feedbackContent = document.getElementById('feedbackContent');
-        const statusDot = document.getElementById('statusDot');
-        const statusText = document.getElementById('statusText');
-
-        // Word count
-        writingInput.addEventListener('input', () => {
-            const text = writingInput.value.trim();
-            const words = text ? text.split(/\s+/).length : 0;
-            wordCountEl.textContent = words;
-        });
-
-        // Get selected aspects
-        function getSelectedAspects() {
-            const checkboxes = document.querySelectorAll('.aspect-chip input:checked');
-            return Array.from(checkboxes).map(cb => cb.value);
-        }
-
-        // Configure marked for security
-        marked.setOptions({
-            breaks: true,
-            gfm: true
-        });
-
-        // Register handler for streaming feedback
-        window.Poe.registerHandler('feedback-handler', (result) => {
-            const msg = result.responses[0];
-
-            if (msg.status === 'error') {
-                statusDot.className = 'status-dot error';
-                statusText.textContent = 'Error occurred';
-                feedbackContent.innerHTML = `<div class="empty-state">Error: ${msg.statusText || 'Unable to get feedback'}</div>`;
-            } else if (msg.status === 'incomplete') {
-                statusDot.className = 'status-dot loading';
-                statusText.textContent = 'Analyzing...';
-                feedbackContent.innerHTML = marked.parse(msg.content);
-            } else if (msg.status === 'complete') {
-                statusDot.className = 'status-dot';
-                statusText.textContent = 'Complete';
-                feedbackContent.innerHTML = marked.parse(msg.content);
-                analyzeBtn.disabled = false;
-                analyzeBtn.innerHTML = '<span class="btn-text">Analyze Writing</span>';
-            }
-        });
-
-        // Analyze button click
-        analyzeBtn.addEventListener('click', async () => {
-            const text = writingInput.value.trim();
-            const aspects = getSelectedAspects();
-
-            if (!text) {
-                showFeedback('Please enter some text to analyze.', 'error');
-                return;
-            }
-
-            if (aspects.length === 0) {
-                showFeedback('Please select at least one aspect for feedback.', 'error');
-                return;
-            }
-
-            // Show loading state
-            analyzeBtn.disabled = true;
-            analyzeBtn.innerHTML = '<div class="spinner"></div><span class="btn-text">Analyzing...</span>';
-
-            feedbackSection.classList.add('visible');
-            statusDot.className = 'status-dot loading';
-            statusText.textContent = 'Analyzing...';
-            feedbackContent.innerHTML = '<div class="empty-state">Getting feedback...</div>';
-
-            // Build prompt
-            const aspectsList = aspects.join(', ');
-            const prompt = `Analyze the following writing and provide focused, constructive feedback ONLY on these specific aspects: ${aspectsList}.
-
-For each aspect, provide:
-- Specific observations with examples from the text
-- Actionable suggestions for improvement
-- What's working well (if applicable)
-
-Keep feedback clear, organized with headings for each aspect, and practical. Use markdown formatting.
-
----
-
-TEXT TO ANALYZE:
-
-${text}`;
-
-            try {
-                await window.Poe.sendUserMessage(`@GPT-4o-mini ${prompt}`, {
-                    handler: 'feedback-handler',
-                    stream: true,
-                    openChat: false
-                });
-            } catch (err) {
-                showFeedback(`Error: ${err.message || 'Unable to analyze text'}`, 'error');
-                analyzeBtn.disabled = false;
-                analyzeBtn.innerHTML = '<span class="btn-text">Analyze Writing</span>';
-            }
-        });
-
-        function showFeedback(message, type = 'info') {
-            feedbackSection.classList.add('visible');
-            statusDot.className = `status-dot ${type === 'error' ? 'error' : ''}`;
-            statusText.textContent = type === 'error' ? 'Error' : 'Info';
-            feedbackContent.innerHTML = `<div class="empty-state">${message}</div>`;
-        }
-    </script>
-</body>
-</html>
++   1 <!DOCTYPE html>
++   2 <html lang="en">
++   3 <head>
++   4     <meta charset="UTF-8">
++   5     <meta name="viewport" content="width=device-width, initial-scale=1.0">
++   6     <title>Type Velocity</title>
++   7     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
++   8     <style>
++   9         :root {
++  10             --bg-primary: #0a0a0f;
++  11             --bg-secondary: #12121a;
++  12             --bg-card: #1a1a24;
++  13             --text-primary: #e8e6e3;
++  14             --text-secondary: #6e6a7c;
++  15             --text-muted: #3d3a4a;
++  16             --accent: #7c3aed;
++  17             --accent-glow: rgba(124, 58, 237, 0.4);
++  18             --correct: #10b981;
++  19             --correct-glow: rgba(16, 185, 129, 0.3);
++  20             --incorrect: #ef4444;
++  21             --incorrect-glow: rgba(239, 68, 68, 0.3);
++  22             --cursor: #f59e0b;
++  23             --border: #2a2a3a;
++  24         }
++  25 
++  26         .dark {
++  27             --bg-primary: #0a0a0f;
++  28             --bg-secondary: #12121a;
++  29             --bg-card: #1a1a24;
++  30             --text-primary: #e8e6e3;
++  31             --text-secondary: #6e6a7c;
++  32             --text-muted: #3d3a4a;
++  33         }
++  34 
++  35         * {
++  36             margin: 0;
++  37             padding: 0;
++  38             box-sizing: border-box;
++  39         }
++  40 
++  41         body {
++  42             font-family: 'JetBrains Mono', monospace;
++  43             background: var(--bg-primary);
++  44             color: var(--text-primary);
++  45             min-height: 100vh;
++  46             overflow-x: hidden;
++  47         }
++  48 
++  49         .bg-grid {
++  50             position: fixed;
++  51             inset: 0;
++  52             background-image: 
++  53                 linear-gradient(rgba(124, 58, 237, 0.03) 1px, transparent 1px),
++  54                 linear-gradient(90deg, rgba(124, 58, 237, 0.03) 1px, transparent 1px);
++  55             background-size: 50px 50px;
++  56             pointer-events: none;
++  57         }
++  58 
++  59         .container {
++  60             max-width: 900px;
++  61             margin: 0 auto;
++  62             padding: 2rem 1.5rem;
++  63             position: relative;
++  64             z-index: 1;
++  65         }
++  66 
++  67         header {
++  68             text-align: center;
++  69             margin-bottom: 2rem;
++  70             animation: fadeIn 0.6s ease-out;
++  71         }
++  72 
++  73         @keyframes fadeIn {
++  74             from { opacity: 0; transform: translateY(-20px); }
++  75             to { opacity: 1; transform: translateY(0); }
++  76         }
++  77 
++  78         @keyframes pulse {
++  79             0%, 100% { opacity: 1; }
++  80             50% { opacity: 0.5; }
++  81         }
++  82 
++  83         @keyframes blink {
++  84             0%, 100% { opacity: 1; }
++  85             50% { opacity: 0; }
++  86         }
++  87 
++  88         @keyframes shake {
++  89             0%, 100% { transform: translateX(0); }
++  90             25% { transform: translateX(-4px); }
++  91             75% { transform: translateX(4px); }
++  92         }
++  93 
++  94         @keyframes popIn {
++  95             from { transform: scale(0.8); opacity: 0; }
++  96             to { transform: scale(1); opacity: 1; }
++  97         }
++  98 
++  99         h1 {
++ 100             font-family: 'Space Grotesk', sans-serif;
++ 101             font-size: 2.5rem;
++ 102             font-weight: 700;
++ 103             background: linear-gradient(135deg, var(--accent), #a78bfa);
++ 104             -webkit-background-clip: text;
++ 105             -webkit-text-fill-color: transparent;
++ 106             background-clip: text;
++ 107             margin-bottom: 0.5rem;
++ 108             letter-spacing: -0.02em;
++ 109         }
++ 110 
++ 111         .subtitle {
++ 112             color: var(--text-secondary);
++ 113             font-size: 0.9rem;
++ 114             font-weight: 400;
++ 115         }
++ 116 
++ 117         .stats-bar {
++ 118             display: grid;
++ 119             grid-template-columns: repeat(3, 1fr);
++ 120             gap: 1rem;
++ 121             margin-bottom: 2rem;
++ 122             animation: fadeIn 0.6s ease-out 0.1s both;
++ 123         }
++ 124 
++ 125         .stat-card {
++ 126             background: var(--bg-card);
++ 127             border: 1px solid var(--border);
++ 128             border-radius: 16px;
++ 129             padding: 1.25rem;
++ 130             text-align: center;
++ 131             position: relative;
++ 132             overflow: hidden;
++ 133         }
++ 134 
++ 135         .stat-card::before {
++ 136             content: '';
++ 137             position: absolute;
++ 138             top: 0;
++ 139             left: 0;
++ 140             right: 0;
++ 141             height: 3px;
++ 142             background: linear-gradient(90deg, var(--accent), #a78bfa);
++ 143             opacity: 0.6;
++ 144         }
++ 145 
++ 146         .stat-card.timer::before {
++ 147             background: linear-gradient(90deg, var(--cursor), #fbbf24);
++ 148         }
++ 149 
++ 150         .stat-card.accuracy::before {
++ 151             background: linear-gradient(90deg, var(--correct), #34d399);
++ 152         }
++ 153 
++ 154         .stat-value {
++ 155             font-size: 2.5rem;
++ 156             font-weight: 700;
++ 157             color: var(--text-primary);
++ 158             line-height: 1;
++ 159             margin-bottom: 0.25rem;
++ 160         }
++ 161 
++ 162         .stat-card.timer .stat-value {
++ 163             color: var(--cursor);
++ 164         }
++ 165 
++ 166         .stat-label {
++ 167             font-size: 0.7rem;
++ 168             text-transform: uppercase;
++ 169             letter-spacing: 0.15em;
++ 170             color: var(--text-secondary);
++ 171         }
++ 172 
++ 173         .typing-area {
++ 174             background: var(--bg-card);
++ 175             border: 1px solid var(--border);
++ 176             border-radius: 20px;
++ 177             padding: 2rem;
++ 178             margin-bottom: 1.5rem;
++ 179             position: relative;
++ 180             animation: fadeIn 0.6s ease-out 0.2s both;
++ 181         }
++ 182 
++ 183         .typing-area::before {
++ 184             content: '';
++ 185             position: absolute;
++ 186             inset: -1px;
++ 187             border-radius: 20px;
++ 188             padding: 1px;
++ 189             background: linear-gradient(135deg, var(--accent), transparent, var(--accent));
++ 190             -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
++ 191             mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
++ 192             -webkit-mask-composite: xor;
++ 193             mask-composite: exclude;
++ 194             opacity: 0.5;
++ 195             pointer-events: none;
++ 196         }
++ 197 
++ 198         .words-display {
++ 199             font-size: 1.5rem;
++ 200             line-height: 2.2;
++ 201             min-height: 180px;
++ 202             position: relative;
++ 203             user-select: none;
++ 204         }
++ 205 
++ 206         .word {
++ 207             display: inline-block;
++ 208             margin-right: 0.6em;
++ 209             margin-bottom: 0.25em;
++ 210         }
++ 211 
++ 212         .letter {
++ 213             display: inline-block;
++ 214             color: var(--text-muted);
++ 215             transition: color 0.1s, text-shadow 0.1s;
++ 216             position: relative;
++ 217         }
++ 218 
++ 219         .letter.correct {
++ 220             color: var(--correct);
++ 221             text-shadow: 0 0 10px var(--correct-glow);
++ 222         }
++ 223 
++ 224         .letter.incorrect {
++ 225             color: var(--incorrect);
++ 226             text-shadow: 0 0 10px var(--incorrect-glow);
++ 227             animation: shake 0.2s ease-out;
++ 228         }
++ 229 
++ 230         .letter.current {
++ 231             color: var(--text-primary);
++ 232         }
++ 233 
++ 234         .letter.current::before {
++ 235             content: '';
++ 236             position: absolute;
++ 237             left: -1px;
++ 238             top: 0;
++ 239             bottom: 0;
++ 240             width: 2px;
++ 241             background: var(--cursor);
++ 242             box-shadow: 0 0 8px var(--cursor);
++ 243             animation: blink 1s infinite;
++ 244         }
++ 245 
++ 246         .letter.extra {
++ 247             color: var(--incorrect);
++ 248             opacity: 0.7;
++ 249         }
++ 250 
++ 251         .hidden-input {
++ 252             position: absolute;
++ 253             opacity: 0;
++ 254             pointer-events: none;
++ 255         }
++ 256 
++ 257         .focus-hint {
++ 258             position: absolute;
++ 259             inset: 0;
++ 260             display: flex;
++ 261             align-items: center;
++ 262             justify-content: center;
++ 263             background: rgba(10, 10, 15, 0.9);
++ 264             border-radius: 20px;
++ 265             font-size: 1rem;
++ 266             color: var(--text-secondary);
++ 267             cursor: pointer;
++ 268             transition: opacity 0.3s;
++ 269             backdrop-filter: blur(4px);
++ 270         }
++ 271 
++ 272         .focus-hint.hidden {
++ 273             opacity: 0;
++ 274             pointer-events: none;
++ 275         }
++ 276 
++ 277         .focus-hint span {
++ 278             padding: 0.75rem 1.5rem;
++ 279             border: 1px dashed var(--border);
++ 280             border-radius: 10px;
++ 281         }
++ 282 
++ 283         .controls {
++ 284             display: flex;
++ 285             gap: 1rem;
++ 286             justify-content: center;
++ 287             animation: fadeIn 0.6s ease-out 0.3s both;
++ 288         }
++ 289 
++ 290         .btn {
++ 291             padding: 0.875rem 2rem;
++ 292             border-radius: 12px;
++ 293             font-family: 'JetBrains Mono', monospace;
++ 294             font-size: 0.9rem;
++ 295             font-weight: 600;
++ 296             cursor: pointer;
++ 297             transition: all 0.2s ease;
++ 298             border: none;
++ 299         }
++ 300 
++ 301         .btn-primary {
++ 302             background: var(--accent);
++ 303             color: #fff;
++ 304             box-shadow: 0 4px 20px var(--accent-glow);
++ 305         }
++ 306 
++ 307         .btn-primary:hover {
++ 308             transform: translateY(-2px);
++ 309             box-shadow: 0 6px 30px var(--accent-glow);
++ 310         }
++ 311 
++ 312         .btn-secondary {
++ 313             background: var(--bg-card);
++ 314             color: var(--text-secondary);
++ 315             border: 1px solid var(--border);
++ 316         }
++ 317 
++ 318         .btn-secondary:hover {
++ 319             color: var(--text-primary);
++ 320             border-color: var(--text-secondary);
++ 321         }
++ 322 
++ 323         .results-overlay {
++ 324             position: fixed;
++ 325             inset: 0;
++ 326             background: rgba(10, 10, 15, 0.95);
++ 327             display: flex;
++ 328             align-items: center;
++ 329             justify-content: center;
++ 330             z-index: 100;
++ 331             opacity: 0;
++ 332             pointer-events: none;
++ 333             transition: opacity 0.3s;
++ 334             backdrop-filter: blur(8px);
++ 335         }
++ 336 
++ 337         .results-overlay.visible {
++ 338             opacity: 1;
++ 339             pointer-events: auto;
++ 340         }
++ 341 
++ 342         .results-card {
++ 343             background: var(--bg-card);
++ 344             border: 1px solid var(--border);
++ 345             border-radius: 24px;
++ 346             padding: 2.5rem;
++ 347             text-align: center;
++ 348             max-width: 400px;
++ 349             width: 90%;
++ 350             animation: popIn 0.4s ease-out;
++ 351         }
++ 352 
++ 353         .results-title {
++ 354             font-family: 'Space Grotesk', sans-serif;
++ 355             font-size: 1.5rem;
++ 356             margin-bottom: 2rem;
++ 357             color: var(--text-primary);
++ 358         }
++ 359 
++ 360         .results-wpm {
++ 361             font-size: 5rem;
++ 362             font-weight: 700;
++ 363             background: linear-gradient(135deg, var(--accent), #a78bfa);
++ 364             -webkit-background-clip: text;
++ 365             -webkit-text-fill-color: transparent;
++ 366             background-clip: text;
++ 367             line-height: 1;
++ 368         }
++ 369 
++ 370         .results-wpm-label {
++ 371             font-size: 0.9rem;
++ 372             color: var(--text-secondary);
++ 373             margin-bottom: 2rem;
++ 374         }
++ 375 
++ 376         .results-stats {
++ 377             display: grid;
++ 378             grid-template-columns: repeat(3, 1fr);
++ 379             gap: 1rem;
++ 380             margin-bottom: 2rem;
++ 381         }
++ 382 
++ 383         .results-stat {
++ 384             padding: 1rem;
++ 385             background: var(--bg-secondary);
++ 386             border-radius: 12px;
++ 387         }
++ 388 
++ 389         .results-stat-value {
++ 390             font-size: 1.5rem;
++ 391             font-weight: 600;
++ 392             color: var(--text-primary);
++ 393         }
++ 394 
++ 395         .results-stat-label {
++ 396             font-size: 0.65rem;
++ 397             text-transform: uppercase;
++ 398             letter-spacing: 0.1em;
++ 399             color: var(--text-secondary);
++ 400         }
++ 401 
++ 402         @media (max-width: 600px) {
++ 403             .container {
++ 404                 padding: 1.25rem 1rem;
++ 405             }
++ 406 
++ 407             h1 {
++ 408                 font-size: 1.8rem;
++ 409             }
++ 410 
++ 411             .stats-bar {
++ 412                 grid-template-columns: repeat(3, 1fr);
++ 413                 gap: 0.5rem;
++ 414             }
++ 415 
++ 416             .stat-card {
++ 417                 padding: 0.875rem 0.5rem;
++ 418             }
++ 419 
++ 420             .stat-value {
++ 421                 font-size: 1.75rem;
++ 422             }
++ 423 
++ 424             .typing-area {
++ 425                 padding: 1.25rem;
++ 426             }
++ 427 
++ 428             .words-display {
++ 429                 font-size: 1.2rem;
++ 430                 line-height: 2;
++ 431                 min-height: 140px;
++ 432             }
++ 433 
++ 434             .results-wpm {
++ 435                 font-size: 4rem;
++ 436             }
++ 437 
++ 438             .results-stats {
++ 439                 grid-template-columns: repeat(3, 1fr);
++ 440                 gap: 0.5rem;
++ 441             }
++ 442 
++ 443             .results-stat {
++ 444                 padding: 0.75rem 0.5rem;
++ 445             }
++ 446 
++ 447             .results-stat-value {
++ 448                 font-size: 1.2rem;
++ 449             }
++ 450         }
++ 451     </style>
++ 452 </head>
++ 453 <body>
++ 454     <div class="bg-grid"></div>
++ 455     
++ 456     <div class="container">
++ 457         <header>
++ 458             <h1>Type Velocity</h1>
++ 459             <p class="subtitle">Test your typing speed in 60 seconds</p>
++ 460         </header>
++ 461 
++ 462         <div class="stats-bar">
++ 463             <div class="stat-card">
++ 464                 <div class="stat-value" id="wpmDisplay">0</div>
++ 465                 <div class="stat-label">WPM</div>
++ 466             </div>
++ 467             <div class="stat-card timer">
++ 468                 <div class="stat-value" id="timerDisplay">60</div>
++ 469                 <div class="stat-label">Seconds</div>
++ 470             </div>
++ 471             <div class="stat-card accuracy">
++ 472                 <div class="stat-value" id="accuracyDisplay">100</div>
++ 473                 <div class="stat-label">Accuracy %</div>
++ 474             </div>
++ 475         </div>
++ 476 
++ 477         <div class="typing-area" id="typingArea">
++ 478             <div class="words-display" id="wordsDisplay"></div>
++ 479             <input type="text" class="hidden-input" id="hiddenInput" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
++ 480             <div class="focus-hint" id="focusHint">
++ 481                 <span>Click here to start typing</span>
++ 482             </div>
++ 483         </div>
++ 484 
++ 485         <div class="controls">
++ 486             <button class="btn btn-primary" id="restartBtn">Restart Test</button>
++ 487         </div>
++ 488     </div>
++ 489 
++ 490     <div class="results-overlay" id="resultsOverlay">
++ 491         <div class="results-card">
++ 492             <h2 class="results-title">Test Complete!</h2>
++ 493             <div class="results-wpm" id="finalWpm">0</div>
++ 494             <div class="results-wpm-label">Words Per Minute</div>
++ 495             <div class="results-stats">
++ 496                 <div class="results-stat">
++ 497                     <div class="results-stat-value" id="finalAccuracy">0%</div>
++ 498                     <div class="results-stat-label">Accuracy</div>
++ 499                 </div>
++ 500                 <div class="results-stat">
++ 501                     <div class="results-stat-value" id="finalCorrect">0</div>
++ 502                     <div class="results-stat-label">Correct</div>
++ 503                 </div>
++ 504                 <div class="results-stat">
++ 505                     <div class="results-stat-value" id="finalErrors">0</div>
++ 506                     <div class="results-stat-label">Errors</div>
++ 507                 </div>
++ 508             </div>
++ 509             <button class="btn btn-primary" id="tryAgainBtn">Try Again</button>
++ 510         </div>
++ 511     </div>
++ 512 
++ 513     <script>
++ 514         // Word list for typing test
++ 515         const wordList = [
++ 516             'the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'it',
++ 517             'for', 'not', 'on', 'with', 'he', 'as', 'you', 'do', 'at', 'this',
++ 518             'but', 'his', 'by', 'from', 'they', 'we', 'say', 'her', 'she', 'or',
++ 519             'an', 'will', 'my', 'one', 'all', 'would', 'there', 'their', 'what',
++ 520             'so', 'up', 'out', 'if', 'about', 'who', 'get', 'which', 'go', 'me',
++ 521             'when', 'make', 'can', 'like', 'time', 'no', 'just', 'him', 'know',
++ 522             'take', 'people', 'into', 'year', 'your', 'good', 'some', 'could',
++ 523             'them', 'see', 'other', 'than', 'then', 'now', 'look', 'only', 'come',
++ 524             'its', 'over', 'think', 'also', 'back', 'after', 'use', 'two', 'how',
++ 525             'our', 'work', 'first', 'well', 'way', 'even', 'new', 'want', 'because',
++ 526             'any', 'these', 'give', 'day', 'most', 'us', 'world', 'life', 'hand',
++ 527             'part', 'child', 'eye', 'woman', 'place', 'case', 'week', 'company',
++ 528             'system', 'program', 'question', 'during', 'play', 'government',
++ 529             'run', 'small', 'number', 'off', 'always', 'move', 'night', 'live',
++ 530             'point', 'believe', 'hold', 'today', 'bring', 'happen', 'next', 'without',
++ 531             'before', 'large', 'million', 'must', 'home', 'under', 'water', 'room',
++ 532             'write', 'mother', 'area', 'national', 'money', 'story', 'young', 'fact',
++ 533             'month', 'different', 'lot', 'study', 'book', 'job', 'word', 'though',
++ 534             'business', 'issue', 'side', 'kind', 'four', 'head', 'far', 'black',
++ 535             'long', 'both', 'little', 'house', 'yes', 'since', 'provide', 'service',
++ 536             'around', 'friend', 'important', 'father', 'away', 'until', 'power',
++ 537             'hour', 'game', 'often', 'yet', 'line', 'political', 'end', 'among',
++ 538             'ever', 'stand', 'bad', 'lose', 'however', 'member', 'pay', 'law', 'meet',
++ 539             'car', 'city', 'almost', 'include', 'continue', 'set', 'later', 'community',
++ 540             'name', 'five', 'once', 'white', 'least', 'president', 'learn', 'real',
++ 541             'change', 'team', 'minute', 'best', 'several', 'idea', 'body', 'information',
++ 542             'nothing', 'ago', 'lead', 'social', 'understand', 'whether', 'watch', 'together',
++ 543             'follow', 'parent', 'stop', 'face', 'anything', 'create', 'public', 'already',
++ 544             'speak', 'others', 'read', 'level', 'allow', 'add', 'office', 'spend', 'door',
++ 545             'health', 'person', 'art', 'sure', 'war', 'history', 'party', 'within', 'grow',
++ 546             'result', 'open', 'morning', 'walk', 'reason', 'low', 'win', 'research', 'girl',
++ 547             'guy', 'early', 'food', 'moment', 'himself', 'air', 'teacher', 'force', 'offer',
++ 548             'enough', 'education', 'across', 'although', 'remember', 'foot', 'second', 'boy',
++ 549             'maybe', 'toward', 'able', 'age', 'policy', 'everything', 'love', 'process'
++ 550         ];
++ 551 
++ 552         // State
++ 553         let words = [];
++ 554         let currentWordIndex = 0;
++ 555         let currentLetterIndex = 0;
++ 556         let correctChars = 0;
++ 557         let incorrectChars = 0;
++ 558         let totalTyped = 0;
++ 559         let timer = 60;
++ 560         let timerInterval = null;
++ 561         let isTestActive = false;
++ 562         let isTestStarted = false;
++ 563 
++ 564         // Elements
++ 565         const wordsDisplay = document.getElementById('wordsDisplay');
++ 566         const hiddenInput = document.getElementById('hiddenInput');
++ 567         const focusHint = document.getElementById('focusHint');
++ 568         const typingArea = document.getElementById('typingArea');
++ 569         const wpmDisplay = document.getElementById('wpmDisplay');
++ 570         const timerDisplay = document.getElementById('timerDisplay');
++ 571         const accuracyDisplay = document.getElementById('accuracyDisplay');
++ 572         const restartBtn = document.getElementById('restartBtn');
++ 573         const resultsOverlay = document.getElementById('resultsOverlay');
++ 574         const tryAgainBtn = document.getElementById('tryAgainBtn');
++ 575 
++ 576         // Generate random words
++ 577         function generateWords(count) {
++ 578             const result = [];
++ 579             for (let i = 0; i < count; i++) {
++ 580                 result.push(wordList[Math.floor(Math.random() * wordList.length)]);
++ 581             }
++ 582             return result;
++ 583         }
++ 584 
++ 585         // Render words display
++ 586         function renderWords() {
++ 587             wordsDisplay.innerHTML = '';
++ 588             words.forEach((word, wordIndex) => {
++ 589                 const wordSpan = document.createElement('span');
++ 590                 wordSpan.className = 'word';
++ 591                 wordSpan.dataset.index = wordIndex;
++ 592 
++ 593                 word.split('').forEach((letter, letterIndex) => {
++ 594                     const letterSpan = document.createElement('span');
++ 595                     letterSpan.className = 'letter';
++ 596                     letterSpan.textContent = letter;
++ 597                     letterSpan.dataset.wordIndex = wordIndex;
++ 598                     letterSpan.dataset.letterIndex = letterIndex;
++ 599                     wordSpan.appendChild(letterSpan);
++ 600                 });
++ 601 
++ 602                 wordsDisplay.appendChild(wordSpan);
++ 603             });
++ 604             updateCursor();
++ 605         }
++ 606 
++ 607         // Update cursor position
++ 608         function updateCursor() {
++ 609             document.querySelectorAll('.letter.current').forEach(el => el.classList.remove('current'));
++ 610             document.querySelectorAll('.letter.extra').forEach(el => el.remove());
++ 611 
++ 612             const currentWord = wordsDisplay.children[currentWordIndex];
++ 613             if (currentWord) {
++ 614                 const letters = currentWord.querySelectorAll('.letter:not(.extra)');
++ 615                 if (currentLetterIndex < letters.length) {
++ 616                     letters[currentLetterIndex].classList.add('current');
++ 617                 } else if (letters.length > 0) {
++ 618                     // Cursor at end of word
++ 619                     const lastLetter = letters[letters.length - 1];
++ 620                     lastLetter.classList.add('current');
++ 621                     lastLetter.style.setProperty('--cursor-right', 'true');
++ 622                 }
++ 623             }
++ 624         }
++ 625 
++ 626         // Update stats display
++ 627         function updateStats() {
++ 628             const timeElapsed = 60 - timer;
++ 629             const minutes = timeElapsed / 60;
++ 630             
++ 631             // Calculate WPM (correct characters / 5 = words)
++ 632             const wpm = minutes > 0 ? Math.round((correctChars / 5) / minutes) : 0;
++ 633             wpmDisplay.textContent = wpm;
++ 634 
++ 635             // Calculate accuracy
++ 636             const accuracy = totalTyped > 0 ? Math.round((correctChars / totalTyped) * 100) : 100;
++ 637             accuracyDisplay.textContent = accuracy;
++ 638 
++ 639             timerDisplay.textContent = timer;
++ 640         }
++ 641 
++ 642         // Start timer
++ 643         function startTimer() {
++ 644             if (timerInterval) return;
++ 645             
++ 646             isTestStarted = true;
++ 647             isTestActive = true;
++ 648 
++ 649             timerInterval = setInterval(() => {
++ 650                 timer--;
++ 651                 updateStats();
++ 652 
++ 653                 if (timer <= 0) {
++ 654                     endTest();
++ 655                 }
++ 656             }, 1000);
++ 657         }
++ 658 
++ 659         // End test
++ 660         function endTest() {
++ 661             isTestActive = false;
++ 662             clearInterval(timerInterval);
++ 663             timerInterval = null;
++ 664 
++ 665             const timeElapsed = 60;
++ 666             const minutes = timeElapsed / 60;
++ 667             const wpm = Math.round((correctChars / 5) / minutes);
++ 668             const accuracy = totalTyped > 0 ? Math.round((correctChars / totalTyped) * 100) : 100;
++ 669 
++ 670             // Show results
++ 671             document.getElementById('finalWpm').textContent = wpm;
++ 672             document.getElementById('finalAccuracy').textContent = accuracy + '%';
++ 673             document.getElementById('finalCorrect').textContent = correctChars;
++ 674             document.getElementById('finalErrors').textContent = incorrectChars;
++ 675             resultsOverlay.classList.add('visible');
++ 676         }
++ 677 
++ 678         // Reset test
++ 679         function resetTest() {
++ 680             clearInterval(timerInterval);
++ 681             timerInterval = null;
++ 682 
++ 683             words = generateWords(100);
++ 684             currentWordIndex = 0;
++ 685             currentLetterIndex = 0;
++ 686             correctChars = 0;
++ 687             incorrectChars = 0;
++ 688             totalTyped = 0;
++ 689             timer = 60;
++ 690             isTestActive = false;
++ 691             isTestStarted = false;
++ 692 
++ 693             hiddenInput.value = '';
++ 694             resultsOverlay.classList.remove('visible');
++ 695             
++ 696             renderWords();
++ 697             updateStats();
++ 698             hiddenInput.focus();
++ 699         }
++ 700 
++ 701         // Handle input
++ 702         function handleInput(e) {
++ 703             if (!isTestActive && isTestStarted) return;
++ 704             if (!isTestStarted) startTimer();
++ 705 
++ 706             const inputValue = hiddenInput.value;
++ 707             const currentWord = words[currentWordIndex];
++ 708             const currentWordEl = wordsDisplay.children[currentWordIndex];
++ 709 
++ 710             if (!currentWordEl) return;
++ 711 
++ 712             const letters = currentWordEl.querySelectorAll('.letter:not(.extra)');
++ 713 
++ 714             // Process each character in input
++ 715             for (let i = 0; i < inputValue.length; i++) {
++ 716                 if (i < letters.length) {
++ 717                     const expectedChar = currentWord[i];
++ 718                     const typedChar = inputValue[i];
++ 719                     
++ 720                     letters[i].classList.remove('correct', 'incorrect', 'current');
++ 721                     
++ 722                     if (typedChar === expectedChar) {
++ 723                         letters[i].classList.add('correct');
++ 724                     } else {
++ 725                         letters[i].classList.add('incorrect');
++ 726                     }
++ 727                 } else {
++ 728                     // Extra characters
++ 729                     const extraSpan = document.createElement('span');
++ 730                     extraSpan.className = 'letter extra incorrect';
++ 731                     extraSpan.textContent = inputValue[i];
++ 732                     currentWordEl.appendChild(extraSpan);
++ 733                 }
++ 734             }
++ 735 
++ 736             // Reset letters after input position
++ 737             for (let i = inputValue.length; i < letters.length; i++) {
++ 738                 letters[i].classList.remove('correct', 'incorrect');
++ 739             }
++ 740 
++ 741             currentLetterIndex = inputValue.length;
++ 742             updateCursor();
++ 743         }
++ 744 
++ 745         // Handle keydown
++ 746         function handleKeydown(e) {
++ 747             if (!isTestActive && isTestStarted) return;
++ 748 
++ 749             if (e.key === ' ') {
++ 750                 e.preventDefault();
++ 751                 
++ 752                 if (!isTestStarted) return;
++ 753 
++ 754                 const inputValue = hiddenInput.value;
++ 755                 const currentWord = words[currentWordIndex];
++ 756 
++ 757                 // Calculate correct/incorrect for this word
++ 758                 for (let i = 0; i < Math.max(inputValue.length, currentWord.length); i++) {
++ 759                     totalTyped++;
++ 760                     if (i < inputValue.length && i < currentWord.length && inputValue[i] === currentWord[i]) {
++ 761                         correctChars++;
++ 762                     } else {
++ 763                         incorrectChars++;
++ 764                     }
++ 765                 }
++ 766 
++ 767                 // Move to next word
++ 768                 currentWordIndex++;
++ 769                 currentLetterIndex = 0;
++ 770                 hiddenInput.value = '';
++ 771 
++ 772                 if (currentWordIndex >= words.length) {
++ 773                     words = words.concat(generateWords(50));
++ 774                     renderWords();
++ 775                 }
++ 776 
++ 777                 updateCursor();
++ 778                 updateStats();
++ 779 
++ 780                 // Scroll if needed
++ 781                 const nextWord = wordsDisplay.children[currentWordIndex];
++ 782                 if (nextWord) {
++ 783                     const containerRect = wordsDisplay.getBoundingClientRect();
++ 784                     const wordRect = nextWord.getBoundingClientRect();
++ 785                     if (wordRect.top > containerRect.top + containerRect.height - 60) {
++ 786                         nextWord.scrollIntoView({ behavior: 'smooth', block: 'center' });
++ 787                     }
++ 788                 }
++ 789             }
++ 790 
++ 791             if (e.key === 'Backspace' && currentLetterIndex > 0) {
++ 792                 // Remove extra letters if any
++ 793                 const currentWordEl = wordsDisplay.children[currentWordIndex];
++ 794                 const extras = currentWordEl.querySelectorAll('.letter.extra');
++ 795                 if (extras.length > 0) {
++ 796                     extras[extras.length - 1].remove();
++ 797                 }
++ 798             }
++ 799         }
++ 800 
++ 801         // Focus management
++ 802         typingArea.addEventListener('click', () => {
++ 803             hiddenInput.focus();
++ 804         });
++ 805 
++ 806         hiddenInput.addEventListener('focus', () => {
++ 807             focusHint.classList.add('hidden');
++ 808         });
++ 809 
++ 810         hiddenInput.addEventListener('blur', () => {
++ 811             if (!isTestStarted) {
++ 812                 focusHint.classList.remove('hidden');
++ 813             }
++ 814         });
++ 815 
++ 816         hiddenInput.addEventListener('input', handleInput);
++ 817         hiddenInput.addEventListener('keydown', handleKeydown);
++ 818 
++ 819         restartBtn.addEventListener('click', resetTest);
++ 820         tryAgainBtn.addEventListener('click', resetTest);
++ 821 
++ 822         // Initialize
++ 823         resetTest();
++ 824     </script>
++ 825 </body>
++ 826 </html>
